@@ -1,0 +1,73 @@
+name: Phase 1 Task
+description: Create a Phase 1 implementation task
+title: "[P1] "
+labels: ["phase-1"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Phase 1 Task Template
+        Use this for Phase 1 implementation tasks. Ensure all fields are completed.
+  
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: Select the priority level for this task
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+  
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What is the goal of this task? (1-2 sentences)
+      placeholder: "Example: Establish type-safe data models for core entities"
+    validations:
+      required: true
+  
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What is in scope for this task? (bullet points)
+      placeholder: |
+        - Item 1
+        - Item 2
+        - Item 3
+    validations:
+      required: true
+  
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: List checkboxes with acceptance criteria
+      placeholder: |
+        - [ ] Criterion 1 is met
+        - [ ] Criterion 2 is met
+        - [ ] All tests pass
+      value: |
+        - [ ] 
+    validations:
+      required: true
+  
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: List issue numbers this depends on (e.g., "#1, #2") or write "None"
+      placeholder: "#1, #2"
+      value: "None"
+  
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks
+      description: What are the risks and potential mitigation strategies?
+      placeholder: "Risk: ... Mitigation: ..."

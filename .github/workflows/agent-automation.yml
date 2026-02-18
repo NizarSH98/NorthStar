@@ -1,0 +1,235 @@
+name: Agent Automation
+
+on:
+  issues:
+    types: [opened, labeled, edited]
+  issue_comment:
+    types: [created]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  route-to-agent:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Route Issue to Test Agent
+        if: |
+          github.event_name == 'issues' && 
+          contains(github.event.issue.labels.*.name, 'testing')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const agentPath = '.github/agents/test.agent.md';
+            
+            let agentInstructions = 'Test Agent';
+            try {
+              if (fs.existsSync(agentPath)) {
+                agentInstructions = fs.readFileSync(agentPath, 'utf8');
+              }
+            } catch (err) {
+              console.log('Could not read test agent file:', err);
+            }
+            
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🤖 **Test Agent Assigned**
+
+This issue has been labeled for testing. The test agent will help ensure:
+- ≥80% test coverage for core modules
+- Proper fixture data (3-5 sources, 10-15 evidence pieces, 5-10 claims)
+- Append-only constraint validation
+- Evidence linkage requirement tests
+- End-to-end testing
+
+Please reference the test agent guidelines when implementing tests.`
+            });
+      
+      - name: Route PR to Reviewer Agent
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const agentPath = '.github/agents/reviewer.agent.md';
+            
+            let reviewerNote = '';
+            try {
+              if (fs.existsSync(agentPath)) {
+                const content = fs.readFileSync(agentPath, 'utf8');
+                // Extract key points from reviewer agent
+                reviewerNote = '\n\nReviewer will check for evidence-first principles and append-only constraints.';
+              }
+            } catch (err) {
+              console.log('Could not read reviewer agent file:', err);
+            }
+            
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🤖 **Reviewer Agent Assigned**
+
+This PR will be reviewed for:
+- Evidence-first principles
+- Append-only history compliance
+- Explicit evidence links for claims/summaries
+- Proper relationship typing
+- Separation of observed vs inferred relationships
+- Test coverage${reviewerNote}`
+            });
+      
+      - name: Phase 1 Dependency Check
+        if: |
+          github.event_name == 'issues' && 
+          contains(github.event.issue.labels.*.name, 'phase-1')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.issue.body || '';
+            const dependencyMatch = body.match(/\*\*Dependencies:\*\*\s*(.+?)(?:\n\n|\n\*\*|$)/is);
+            
+            if (dependencyMatch && dependencyMatch[1].trim() !== 'None') {
+              const dependencies = dependencyMatch[1].trim();
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `📋 **Dependency Check**
+
+This issue depends on: ${dependencies}
+
+Please ensure all dependencies are completed before starting work on this issue.`
+              });
+            }
+
+  critical-issue-alert:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    if: |
+      github.event_name == 'issues' && 
+      github.event.action == 'opened' &&
+      contains(github.event.issue.labels.*.name, 'critical')
+    steps:
+      - name: Alert on Critical Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `⚠️ **CRITICAL PRIORITY ISSUE**
+
+This is a blocking issue for Phase 1 completion. 
+
+**Action Required:**
+- Prioritize this issue in current sprint
+- Ensure team capacity is allocated
+- Track progress daily
+- Alert on any blockers immediately`
+            });
+            
+            // Pin the issue
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              state: 'open'
+            });
+
+  test-validation:
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'issues' && 
+      contains(github.event.issue.labels.*.name, 'testing')
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Post Testing Guidelines
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## Testing Guidelines
+
+**Required Test Coverage:**
+- Core modules: ≥80%
+- Integration tests for all API endpoints
+- Append-only constraint validation
+- Evidence linkage validation
+
+**Fixture Data Requirements:**
+- 3-5 diverse sources (news, social, primary documents)
+- 10-15 evidence pieces with varied metadata
+- 5-10 claims with different relationship types
+- Both observed and inferred relationships
+- Edge cases (circular refs, missing evidence, etc.)
+
+**Test Categories:**
+1. Unit tests for data models and validation
+2. Integration tests for ingestion and query flows
+3. End-to-end tests for complete workflows
+4. Performance tests for graph traversal
+
+**CI/CD Integration:**
+Tests must pass on every commit before merge.`
+            });
+
+  phase-progress-tracking:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: read
+      contents: write
+    if: github.event_name == 'issues' && github.event.action == 'closed'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Update Phase Progress
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'phase-1',
+              state: 'all'
+            });
+            
+            const total = issues.length;
+            const closed = issues.filter(i => i.state === 'closed').length;
+            const open = total - closed;
+            const progress = total > 0 ? Math.round((closed / total) * 100) : 0;
+            
+            console.log(`Phase 1 Progress: ${closed}/${total} (${progress}%)`);
+            
+            if (progress === 100) {
+              // Create completion issue
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '🎉 Phase 1 Complete - Ready for Phase 2 Planning',
+                body: `All Phase 1 issues have been completed!
+
+**Completed Issues:** ${closed}
+**Total Issues:** ${total}
+
+**Next Steps:**
+1. Review Phase 1 deliverables
+2. Conduct retrospective
+3. Plan Phase 2 scope
+4. Update documentation`,
+                labels: ['milestone', 'phase-2-planning']
+              });
+            }

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📚 Documentation
+    url: https://github.com/NizarSH98/NorthStar/blob/main/PRD.md
+    about: Read the Product Requirements Document
+  - name: 💬 Discussions
+    url: https://github.com/NizarSH98/NorthStar/discussions
+    about: Ask questions and discuss ideas with the community
