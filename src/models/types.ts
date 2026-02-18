@@ -1,6 +1,4 @@
-import { randomUUID } from 'crypto';
-
-export type UUID = string;
+import { UUID } from 'crypto';
 
 export interface Evidence {
   readonly id: UUID;
@@ -43,39 +41,4 @@ export interface Relationship {
   readonly algorithm?: string;
   readonly created_at: Date;
   readonly created_by: string;
-}
-
-export interface Event {
-  readonly event_id: UUID;
-  readonly entity_type: 'evidence' | 'claim' | 'source' | 'relationship';
-  readonly entity_id: UUID;
-  readonly event_type: 'created' | 'linked' | 'updated';
-  readonly payload: Record<string, any>;
-  readonly timestamp: Date;
-}
-
-export function validateEvidence(evidence: Partial<Evidence>): boolean {
-  return !!(
-    evidence.content &&
-    evidence.source_id &&
-    evidence.content_hash
-  );
-}
-
-export function validateClaim(claim: Partial<Claim>): boolean {
-  return !!(
-    claim.text &&
-    claim.evidence_refs &&
-    claim.evidence_refs.length > 0
-  );
-}
-
-export function validateRelationship(rel: Partial<Relationship>): boolean {
-  const validTypes: RelationshipType[] = ['supports', 'disputes', 'corroborates', 'related'];
-  return !!(
-    rel.type &&
-    validTypes.includes(rel.type) &&
-    rel.from_id &&
-    rel.to_id
-  );
 }
