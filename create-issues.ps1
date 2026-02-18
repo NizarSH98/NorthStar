@@ -1,4 +1,4 @@
-# create-issues.ps1 - Create all Phase 1 GitHub issues
+﻿# create-issues.ps1 - Create all Phase 1 GitHub issues
 # Run this script with: .\create-issues.ps1
 
 $issues = @(
@@ -276,7 +276,7 @@ $issues = @(
         labels = @("phase-1", "critical", "database")
     },
     @{
-        title = "[P1] Build Basic UI—Evidence & Claim Viewer"
+        title = "[P1] Build Basic UI - Evidence & Claim Viewer"
         body = @"
 **Goal:** Create minimal read-only UI to view evidence and claims with provenance.
 
